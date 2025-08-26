@@ -1,0 +1,17 @@
+{
+  "name": "library-backend",
+  "version": "0.0.1",
+  "description": "Exercises for Full Stack Web Development course",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "dev": "nodemon index.js"
+  },
+  "author": "Sami Heinimo",
+  "license": "ISC",
+  "dependencies": {
+    "@apollo/server": "^5.0.0",
+    "graphql": "^16.11.0",
+    "nodemon": "^3.1.10"
+  }
+}
