@@ -1,6 +1,6 @@
 const { ApolloServer } = require('@apollo/server')
 const { startStandaloneServer } = require('@apollo/server/standalone')
-const { v1: uuid } = require('uuid')
+const { GraphQLError } = require('graphql')
 require('dotenv/config')
 
 const mongoose = require('mongoose')
@@ -57,13 +57,6 @@ const typeDefs = `
   }
 `
 
-const createAuthor = async args => {
-  const author = new Author({ ...args })
-  await author.save()
-
-  return author
-}
-
 const resolvers = {
   Query: {
     bookCount: async () => await Book.countDocuments(),
@@ -87,16 +80,54 @@ const resolvers = {
       let author = await Author.findOne({ name: args.author })
 
       if (!author) {
-        author = createAuthor({ name: args.author })
+        author = new Author({ name: args.author })
+        await author.save()
       }
 
       const book = new Book({ ...args, author: author.id })
-      const savedBook = await book.save()
 
-      return savedBook.populate('author')
+      let savedBook
+      try {
+        savedBook = await book.save()
+      } catch (error) {
+        throw new GraphQLError(error.message, {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.title,
+            error,
+          },
+        })
+      }
+
+      return await savedBook.populate('author')
     },
-    addAuthor: async (root, args) => await createAuthor(args),
+    addAuthor: async (root, args) => {
+      const author = new Author({ ...args })
+
+      try {
+        await author.save()
+      } catch (error) {
+        throw new GraphQLError(error.message, {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+            error,
+          },
+        })
+      }
+
+      return author
+    },
     editAuthor: async (root, args) => {
+      const author = await Author.findOne({ name: args.name })
+      if (!author) {
+        throw new GraphQLError('Changing birthyear failed', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args.name,
+          },
+        })
+      }
       const updatedAuthor = await Author.findOneAndUpdate(
         { name: args.name },
         { born: args.setBornTo },
