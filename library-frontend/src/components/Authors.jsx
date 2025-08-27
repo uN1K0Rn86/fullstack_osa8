@@ -3,7 +3,7 @@ import { ALL_AUTHORS, ALL_BOOKS, EDIT_BIRTHYEAR } from '../queries'
 import { useState } from 'react'
 import Select from 'react-select'
 
-const Authors = () => {
+const Authors = ({ token }) => {
   const result = useQuery(ALL_AUTHORS)
 
   const [editAuthor] = useMutation(EDIT_BIRTHYEAR, {
@@ -50,22 +50,26 @@ const Authors = () => {
           ))}
         </tbody>
       </table>
-      <h3>Set Birthyear</h3>
-      <form onSubmit={handleSubmit}>
-        <Select
-          placeholder="Select author here"
-          onChange={handleAuthorChange}
-          options={options}
-        />
-        <div>
-          Born
-          <input
-            value={born}
-            onChange={({ target }) => setBorn(target.value)}
-          />
-        </div>
-        <button type="submit">Change year</button>
-      </form>
+      {token && (
+        <>
+          <h3>Set Birthyear</h3>
+          <form onSubmit={handleSubmit}>
+            <Select
+              placeholder="Select author here"
+              onChange={handleAuthorChange}
+              options={options}
+            />
+            <div>
+              Born
+              <input
+                value={born}
+                onChange={({ target }) => setBorn(target.value)}
+              />
+            </div>
+            <button type="submit">Change year</button>
+          </form>
+        </>
+      )}
     </div>
   )
 }
