@@ -10,13 +10,20 @@ import {
   useSubscription,
 } from '@apollo/client/react'
 import Recommended from './components/Recommended'
-import { ALL_BOOKS, BOOK_ADDED, ME } from './queries'
+import {
+  ALL_BOOKS,
+  BOOK_ADDED,
+  ME,
+  ALL_GENRES,
+  BOOKS_BY_GENRE,
+} from './queries'
 
 const App = () => {
   const [token, setToken] = useState(null)
   const navigate = useNavigate()
   const client = useApolloClient()
   const userQuery = useQuery(ME)
+  const genreQuery = useQuery(ALL_GENRES)
 
   useEffect(() => {
     const storedToken = localStorage.getItem('user-token')
@@ -35,10 +42,25 @@ const App = () => {
           allBooks: allBooks.concat(addedBook),
         }
       })
+
+      genres.forEach(g => {
+        client.cache.updateQuery(
+          { query: BOOKS_BY_GENRE, variables: { genre: g } },
+          booksByGenre => {
+            if (!booksByGenre) {
+              return booksByGenre
+            }
+
+            return {
+              allBooks: booksByGenre.allBooks.concat(addedBook),
+            }
+          }
+        )
+      })
     },
   })
 
-  if (userQuery.loading) {
+  if (userQuery.loading || genreQuery.loading) {
     return <div>loading...</div>
   }
 
@@ -50,6 +72,7 @@ const App = () => {
   }
 
   const user = userQuery.data.me
+  const genres = genreQuery.data.allGenres
 
   return (
     <div>
@@ -74,8 +97,8 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Authors token={token} />} />
         <Route path="/authors" element={<Authors token={token} />} />
-        <Route path="/books" element={<Books />} />
-        <Route path="/addbook" element={<NewBook />} />
+        <Route path="/books" element={<Books genres={genres} />} />
+        <Route path="/addbook" element={<NewBook genresToUpdate={genres} />} />
         <Route path="/recommended" element={<Recommended user={user} />} />
         <Route path="/login" element={<LoginForm setToken={setToken} />} />
       </Routes>
