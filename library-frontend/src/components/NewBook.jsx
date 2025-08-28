@@ -28,7 +28,9 @@ const NewBook = () => {
         cache.updateQuery(
           { query: BOOKS_BY_GENRE, variables: { genre: g } },
           booksByGenre => {
-            if (!booksByGenre) return { allBooks: [newBook] }
+            if (!booksByGenre) {
+              return booksByGenre
+            }
 
             return {
               allBooks: booksByGenre.allBooks.concat(newBook),
