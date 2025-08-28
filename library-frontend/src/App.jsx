@@ -4,9 +4,13 @@ import NewBook from './components/NewBook'
 import LoginForm from './components/LoginForm'
 import { Routes, Route, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { useApolloClient, useQuery } from '@apollo/client/react'
+import {
+  useApolloClient,
+  useQuery,
+  useSubscription,
+} from '@apollo/client/react'
 import Recommended from './components/Recommended'
-import { ME } from './queries'
+import { ALL_BOOKS, BOOK_ADDED, ME } from './queries'
 
 const App = () => {
   const [token, setToken] = useState(null)
@@ -20,6 +24,19 @@ const App = () => {
       setToken(storedToken)
     }
   }, [])
+
+  useSubscription(BOOK_ADDED, {
+    onData: ({ data }) => {
+      const addedBook = data.data.bookAdded
+      window.alert(`New book added: ${addedBook.title}`)
+
+      client.cache.updateQuery({ query: ALL_BOOKS }, ({ allBooks }) => {
+        return {
+          allBooks: allBooks.concat(addedBook),
+        }
+      })
+    },
+  })
 
   if (userQuery.loading) {
     return <div>loading...</div>
