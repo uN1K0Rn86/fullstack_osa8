@@ -17,6 +17,7 @@ import {
   ALL_GENRES,
   BOOKS_BY_GENRE,
 } from './queries'
+import { updateCache, uniqueByName } from './helpers'
 
 const App = () => {
   const [token, setToken] = useState(null)
@@ -37,14 +38,14 @@ const App = () => {
       const addedBook = data.data.bookAdded
       window.alert(`New book added: ${addedBook.title}`)
 
-      client.cache.updateQuery({ query: ALL_BOOKS }, ({ allBooks }) => {
-        return {
-          allBooks: allBooks.concat(addedBook),
-        }
+      updateCache(client.cache, { query: ALL_BOOKS }, prev => {
+        const object = { allBooks: uniqueByName([...prev.allBooks, addedBook]) }
+        return object
       })
 
-      genres.forEach(g => {
-        client.cache.updateQuery(
+      addedBook.genres.forEach(g => {
+        updateCache(
+          client.cache,
           { query: BOOKS_BY_GENRE, variables: { genre: g } },
           booksByGenre => {
             if (!booksByGenre) {
@@ -52,7 +53,7 @@ const App = () => {
             }
 
             return {
-              allBooks: booksByGenre.allBooks.concat(addedBook),
+              allBooks: uniqueByName(booksByGenre.allBooks.concat(addedBook)),
             }
           }
         )
@@ -98,7 +99,7 @@ const App = () => {
         <Route path="/" element={<Authors token={token} />} />
         <Route path="/authors" element={<Authors token={token} />} />
         <Route path="/books" element={<Books genres={genres} />} />
-        <Route path="/addbook" element={<NewBook genresToUpdate={genres} />} />
+        <Route path="/addbook" element={<NewBook />} />
         <Route path="/recommended" element={<Recommended user={user} />} />
         <Route path="/login" element={<LoginForm setToken={setToken} />} />
       </Routes>
